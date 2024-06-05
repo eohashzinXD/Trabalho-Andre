@@ -22,7 +22,7 @@ void menu(){
             //vooDispo();
             break;
         case 2:
-            fazerReserva(&pessoas);
+            fazerReserva(&pessoas, "passageiros.txt");
             break;
         case 3:
             //listarReservas();
@@ -40,35 +40,52 @@ void menu(){
     } while (op != 5);
 }
 
-void fazerReserva(Passageiro *pessoas){
-    fflush(stdin);
-    printf("Digite seu nome completo: \n");
-    if (fgets(pessoas->nome, sizeof(pessoas->nome), stdin) != NULL)
+int fazerReserva(Passageiro *pessoas, const char* filename){
+    Passageiro unico;
+    char *caractere_nao_convertido;
+
+    char linha[256];
+    char nome[200];
+    char sobrenome[200];
+    char sobrenome_sobre[200];
+    char ultimo_nome[200];
+    char doc[20];
+
+    FILE *txtFile = fopen(filename, "r");
+    if (!txtFile)
     {
-        size_t len = strlen(pessoas->nome);
-        if (len > 0 && pessoas->nome[len - 1] == '\n')
-        {
-            pessoas->nome[len - 1] = '\0';
-        }
+        return 1;
     }
-    fflush(stdin);
-    printf("Digite seu numero de documento(000.000.000.00):\n");
-    if (fgets(pessoas->numero_doc, sizeof(pessoas->numero_doc), stdin) != NULL)
+
+    int count = 0;
+    while (fgets(linha, sizeof(linha), txtFile))
     {
-        size_t len = strlen(pessoas->numero_doc);
-        if (len > 0 && pessoas->numero_doc[len - 1] == '\n')
-        {
-            pessoas->numero_doc[len - 1] = '\0';
-        }
+        sscanf(linha, "%s %s %s %s %s\n", nome, sobrenome, sobrenome_sobre, ultimo_nome, doc);
+
+        unico.numero_doc = strtol(doc, &caractere_nao_convertido, 10);
+        snprintf(unico.nome, sizeof(unico.nome), "%s", nome);
+        snprintf(unico.segundo, sizeof(unico.segundo), "%s", sobrenome);
+        snprintf(unico.sobrenome, sizeof(unico.sobrenome), "%s", sobrenome_sobre);
+        snprintf(unico.ultimo, sizeof(unico.ultimo), "%s", ultimo_nome);
+        printf("%s\n", doc);
+
+        pessoas[count] = unico;
+        //printf("Reg Nome: %s %s %s %s\nNumero Doc: %ld\n", pessoas[count].nome,pessoas[count].segundo,pessoas[count].sobrenome,pessoas[count].ultimo, pessoas[count].numero_doc);
+        count++;
     }
-    menu();
-    //printf("Nome: %s\nNumero Doc: %s\n", pessoas->nome, pessoas->numero_doc);
+    fclose(txtFile);
+    
+    return count;
 }
 
 int main(int argc, char const *argv[])
 {
-    Passageiro pessoas;
-    menu();
+    Passageiro pessoas[MAX_VETOR];
+    
+    fazerReserva(pessoas, "passageiros.txt");
+    
+    
+    //menu();
     
     return 0;
 }
