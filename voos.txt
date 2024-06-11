@@ -1,3 +1,5 @@
-Brasil Asia 22/10/2025
-Portugal Brasil 23/09/2031
-Hungria EUA 31/03/2029
+Campinas Toquio 15/07/2024 08:30 150
+Brasilia Salvador 15/07/2024 12:00 200
+Dubai Fortaleza 16/07/2024 06:45 180
+Rio Curitiba 16/07/2024 09:15 120
+Recife Manaus 17/07/2024 14:30 100
