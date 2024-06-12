@@ -1,6 +1,6 @@
 #include "structs.h"
 
-int carregarPassageiros(Passageiros *pessoas, const char *filename){
+int carregarPassageiros(Passageiros **pessoas, const char *filename){
     Passageiros unico;
     char linha[118];
     char nome[200];
@@ -15,6 +15,14 @@ int carregarPassageiros(Passageiros *pessoas, const char *filename){
     }
 
     int count = 0;
+    int capacidade = 10;// capacidade inicial
+    *pessoas = malloc(capacidade * sizeof(Passageiros));
+    if (*pessoas == NULL) {
+        printf("Erro ao alocar memória para passageiros!\n");
+        fclose(file);
+        return -1;
+    }
+
     while (fgets(linha, sizeof(linha), file))
     {
         sscanf(linha, "%s %s\n", nome, nDoc);
@@ -22,20 +30,27 @@ int carregarPassageiros(Passageiros *pessoas, const char *filename){
 
         unico.numDoc = strtol(nDoc, &caractere_nao_coonvertido, 10);
         snprintf(unico.nome, sizeof(unico.nome), "%s", nome);
+        
+        if (count >= capacidade) {
+            capacidade *= 2;
+            *pessoas = realloc(*pessoas, capacidade * sizeof(Passageiros));
+        }
 
-        pessoas[count] = unico;
+        (*pessoas)[count] = unico;
         //printf("%s %s\n", nome, nDoc); //para debug
         //printf("Reg: %s %d\n", pessoas[count].nome, pessoas[count].numDoc);//debug reg
         count++;
     }
     
     fclose(file);
+    //printf("Carregados %d passageiros.\n", count);
     return count;
 }
 
-int carregarVoos(Voos *voo, const char *filename){
+int carregarVoos(Voos **voo, const char *filename){
     Voos unico;
     int count = 0;
+    int capacidade = 10;//capacidade inicial
     char *caractere_nao_convertido;
     char linha[556], origem[15], destino[15], string_data[11], string_hora[6], assentos[4];
     char dia[3], mes[3], ano[5], hora[3], min[4];
@@ -46,8 +61,17 @@ int carregarVoos(Voos *voo, const char *filename){
         return -2;
     }
 
+    *voo = malloc(capacidade * sizeof(Voos));
+    if (*voo == NULL)
+    {
+        printf("Erro ao alocar memoria do voo!\n");
+        return -1;
+    }
+    
+
     while (fgets(linha, sizeof(linha), file))
     {
+        
         sscanf(linha, "%s %s %s %s %s", origem, destino, string_data, string_hora, assentos);
         //printf("Linha: %s %s %s %s %s\n", origem, destino, string_data, string_hora, assentos); 
 
@@ -65,13 +89,16 @@ int carregarVoos(Voos *voo, const char *filename){
 
         //printf("Reg %d/%d/%d %s %s %d:%d %d\n", unico.dia, unico.mes, unico.ano, unico.origem, unico.destino, unico.hora, unico.min, unico.assentosDispo);
 
-        voo[count] = unico;
+        if (count >= capacidade) {
+            capacidade *= 2;
+            *voo = realloc(*voo, capacidade * sizeof(Voos));
+        }
+
+        (*voo)[count] = unico;
         count++;
     }
     fclose(file);
     return count;
-
-    
 }
 
 void fazerReservas(Passageiros *pessoas,int numPassageiros, Voos *voo, int numVoos, Reserva *reservas, int *numReservas){
@@ -109,7 +136,7 @@ void fazerReservas(Passageiros *pessoas,int numPassageiros, Voos *voo, int numVo
 }
 
 void consultarVoos(Voos *voo, int *numVoos){
-    for (int i = 0; i < numVoos; i++)
+    for (int i = 0; i < *numVoos; i++)
     {
         printf("\nOrigem: %s\n Destino: %s\n Data: %2d/%1d/%4d\n Hora: %2d:%1d\n Assentos Disponiveis: %d\n", voo[i].origem, voo[i].destino, voo[i].dia, voo[i].mes, voo[i].ano, voo[i].hora, voo[i].min, voo[i].assentosDispo);
     }
@@ -128,7 +155,7 @@ void excluirReserva(Passageiros *pessoas, Voos *voo, Reserva *reservas, int *num
         return;
     }
 
-    printf("Voos reservados pelo passageiro %s (ID %d):\n", pessoas[idPass].nome, idPass);
+    printf("Voos reservados pelo passageiro %s (ID %d) (Documento %d):\n", pessoas[idPass].nome, idPass, pessoas->numDoc);
     int voosReservados[MAX_PESSOAS];
     int numVoosReservados = 0;
 
@@ -152,7 +179,7 @@ void excluirReserva(Passageiros *pessoas, Voos *voo, Reserva *reservas, int *num
         printf("Nenhuma reserva encontrada para o passgeiro informado!\n");
         return;
     }
-    printf("Digite o número do voo que deseja excluir (1 a %d): ", numVoosReservados);
+    printf("Digite o n?mero do voo que deseja excluir (1 a %d): ", numVoosReservados);
     vooParaExcluir = input_d("");
 
     if(vooParaExcluir < 1 || vooParaExcluir > numVoosReservados){
@@ -170,7 +197,7 @@ void excluirReserva(Passageiros *pessoas, Voos *voo, Reserva *reservas, int *num
     }
 
     (*numReservas)--;
-    printf("Reserva excluída com sucesso!\n");
+    printf("Reserva exclu?da com sucesso!\n");
 }
 
 void listarReservas(Reserva *reservas, int numReservas, Passageiros *pessoas, int numPassageiros, Voos *voo, int numVoos){
@@ -191,7 +218,7 @@ void listarReservas(Reserva *reservas, int numReservas, Passageiros *pessoas, in
         if (reservas[i].idPassageiro == idPass)
         {
             int idVoo = reservas[i].idVoo;
-            printf("\nVoo %d:\n", i+1);
+            printf("\nVoo %d:\n", reservas[i].idVoo+1);
             printf("Origem: %s\n", voo[idVoo].origem);
             printf("Destino: %s\n", voo[idVoo].destino);
             printf("Data: %02d/%02d/%04d\n", voo[idVoo].dia, voo[idVoo].mes, voo[idVoo].ano);
@@ -212,17 +239,17 @@ void listarReservas(Reserva *reservas, int numReservas, Passageiros *pessoas, in
 int main(int argc, char const *argv[])
 {
     setlocale(LC_ALL, "Portuguese");
-    Passageiros pessoas[MAX_PESSOAS];
-    Voos voo[MAX_PESSOAS];
+    Passageiros *pessoas = NULL;
+    Voos *voo = NULL;
     Reserva reservas[MAX_PESSOAS];
     int count = 0;
     int numPassageiros = 0;
     int numVoos = 0;
     int numReservas = 0;
     
-    numVoos = carregarVoos(voo, "voos.txt");
+    numVoos = carregarVoos(&voo, "voos.txt");
     if (numVoos < 0) return 1;
-    numPassageiros = carregarPassageiros(pessoas, "passageiros.txt");
+    numPassageiros = carregarPassageiros(&pessoas, "passageiros.txt");
     if (numPassageiros < 0) return 1;
     //printf("NumPassageiros: %d %d\n", numPassageiros - 1, numVoos);
     //fazerReservas(pessoas, &numPassageiros, voo, &numVoos, reservas, numReservas);
@@ -248,7 +275,7 @@ int main(int argc, char const *argv[])
                 fazerReservas(pessoas, numPassageiros, voo, numVoos, reservas, &numReservas);
                 break;
             case 2:
-                consultarVoos(voo, numVoos);
+                consultarVoos(voo, &numVoos);
                 break;
             case 3:
                 listarReservas(reservas, numReservas, pessoas, numPassageiros, voo, numVoos);
@@ -261,5 +288,8 @@ int main(int argc, char const *argv[])
                 return;
         }
     }
+
+    free(pessoas);
+    free(voo);
     return 0;
 }
